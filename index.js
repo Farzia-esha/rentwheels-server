@@ -1,7 +1,7 @@
 const express = require('express')
 const cors = require('cors')
 require('dotenv').config()
-const { MongoClient, ServerApiVersion } = require('mongodb');
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const app = express()
 const port = process.env.PORT || 3000;
 console.log(process.env)
@@ -28,6 +28,8 @@ async function run() {
 
     const db =client.db('rentwheels-db')
     const carsCollection =db.collection('cars')
+    const bookingsCollection = db.collection('bookings');
+
 
     app.get('/cars',async(req,res)=>{
         const result = await carsCollection.find().toArray()
@@ -38,13 +40,18 @@ async function run() {
     app.get('/cars/featured', async (req, res) => {
         const result = await carsCollection
           .find()
-          .sort({ createdAt: -1 })
+          .sort({ updatedAt: 1 })
           .limit(6)
           .toArray();
         res.send(result);
     });
 
-
+    app.get('/cars/:id', async (req, res) => {
+    const id = req.params.id;
+    const query = { _id: new ObjectId(id) };
+    const result = await carsCollection.findOne(query);
+    res.send(result);
+    })
 
 
     await client.db("admin").command({ ping: 1 });
