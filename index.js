@@ -33,7 +33,18 @@ async function run() {
         const result = await carsCollection.find().toArray()
         // console.log(result)
         res.send(result)
-    })
+    });
+
+    app.get('/cars/featured', async (req, res) => {
+        const result = await carsCollection
+          .find()
+          .sort({ createdAt: -1 })
+          .limit(6)
+          .toArray();
+        res.send(result);
+    });
+
+
 
 
     await client.db("admin").command({ ping: 1 });
