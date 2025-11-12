@@ -78,7 +78,15 @@ app.post('/cars', async (req, res) => {
         const result = await carsCollection.updateOne(filter, updateDoc);
         res.send(result);
       });
-
+      
+// Delete car
+    app.delete('/cars/:id', async (req, res) => {
+        const id = req.params.id;
+        const query = { _id: new ObjectId(id) };
+        const result = await carsCollection.deleteOne(query);
+        res.send(result);
+      });
+      
 
     await client.db("admin").command({ ping: 1 });
     console.log("Pinged your deployment. You successfully connected to MongoDB!");
