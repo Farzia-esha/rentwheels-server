@@ -86,7 +86,14 @@ app.post('/cars', async (req, res) => {
         const result = await carsCollection.deleteOne(query);
         res.send(result);
       });
-      
+// get car by providerEmail
+app.get('/cars/provider/:email', async (req, res) => {
+        const email = req.params.email;
+        const query = { providerEmail: email };
+        const result = await carsCollection.find(query).toArray();
+        res.send(result);
+      } );
+
 
     await client.db("admin").command({ ping: 1 });
     console.log("Pinged your deployment. You successfully connected to MongoDB!");
