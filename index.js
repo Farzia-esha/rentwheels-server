@@ -44,6 +44,15 @@ async function run() {
           .toArray();
         res.send(result);
     });
+
+    // get car by providerEmail
+    app.get('/cars/provider/:email', async (req, res) => {
+        const email = req.params.email;
+        const query = { providerEmail: email };
+        const result = await carsCollection.find(query).toArray();
+        res.send(result);
+      });
+      
 //single car by id
     app.get('/cars/:id', async (req, res) => {
     const id = req.params.id;
@@ -85,13 +94,7 @@ app.post('/cars', async (req, res) => {
         const result = await carsCollection.deleteOne(query);
         res.send(result);
       });
-// get car by providerEmail
-    app.get('/cars/provider/:email', async (req, res) => {
-        const email = req.params.email;
-        const query = { providerEmail: email };
-        const result = await carsCollection.find(query).toArray();
-        res.send(result);
-      });
+
     
 
       //booking part
