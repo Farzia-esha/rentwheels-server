@@ -30,28 +30,54 @@ async function run() {
     const carsCollection =db.collection('cars')
     const bookingsCollection = db.collection('bookings');
 
-
+//all car
     app.get('/cars',async(req,res)=>{
         const result = await carsCollection.find().toArray()
         // console.log(result)
         res.send(result)
     });
-
+//feature car
     app.get('/cars/featured', async (req, res) => {
         const result = await carsCollection
           .find()
-          .sort({ updatedAt: 1 })
+          .sort({ updatedAt: -1 })
           .limit(6)
           .toArray();
         res.send(result);
     });
-
+//single car by id
     app.get('/cars/:id', async (req, res) => {
     const id = req.params.id;
     const query = { _id: new ObjectId(id) };
     const result = await carsCollection.findOne(query);
     res.send(result);
-    })
+    });
+
+    // Add new car
+app.post('/cars', async (req, res) => {
+    const newCar = req.body;
+    newCar.status = 'available';
+    newCar.createdAt = new Date().toISOString();
+    newCar.updatedAt = new Date().toISOString();
+    
+    const result = await carsCollection.insertOne(newCar);
+    res.send(result);
+});
+
+ // Update car
+    app.put('/cars/:id', async (req, res) => {
+        const id = req.params.id;
+        const updatedCar = req.body;
+        updatedCar.updatedAt = new Date().toISOString();
+        
+        const filter = { _id: new ObjectId(id) };
+        const updateDoc = {
+          $set: updatedCar
+        };
+        
+        const result = await carsCollection.updateOne(filter, updateDoc);
+        res.send(result);
+      });
 
 
     await client.db("admin").command({ ping: 1 });
