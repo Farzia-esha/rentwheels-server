@@ -13,7 +13,6 @@ app.use(express.json())
 
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.zeenoci.mongodb.net/?appName=Cluster0`;
 
-// Create a MongoClient with a MongoClientOptions object to set the Stable API version
 const client = new MongoClient(uri, {
   serverApi: {
     version: ServerApiVersion.v1,
@@ -87,12 +86,60 @@ app.post('/cars', async (req, res) => {
         res.send(result);
       });
 // get car by providerEmail
-app.get('/cars/provider/:email', async (req, res) => {
+    app.get('/cars/provider/:email', async (req, res) => {
         const email = req.params.email;
         const query = { providerEmail: email };
         const result = await carsCollection.find(query).toArray();
         res.send(result);
-      } );
+      });
+    
+
+      //booking part
+
+    // Get all bookings by user email (My Bookings)
+    app.get('/bookings/:email', async (req, res) => {
+        const email = req.params.email;
+        const query = { userEmail: email };
+        const result = await bookingsCollection.find(query).toArray();
+        res.send(result);
+      });
+
+      app.post('/bookings', async (req, res) => {
+        const booking = req.body;
+        const car = await carsCollection.findOne({ _id: new ObjectId(booking.carId) })
+
+        // Add booking
+        booking.bookingDate = new Date().toISOString();
+        const bookingResult = await bookingsCollection.insertOne(booking);
+        await carsCollection.updateOne(
+          { _id: new ObjectId(booking.carId) },
+          { $set: { 
+              status: 'booked',
+              updatedAt: new Date().toISOString()
+            } 
+          }
+        );
+        res.send(bookingResult);
+      });
+
+      app.delete('/bookings/:id', async (req, res) => {
+        const id = req.params.id;
+        const booking = await bookingsCollection.findOne({ _id: new ObjectId(id) });
+        const result = await bookingsCollection.deleteOne({ _id: new ObjectId(id) });
+          await carsCollection.updateOne(
+          { _id: new ObjectId(booking.carId) },
+          {   $set: { 
+              status: 'available',
+              updatedAt: new Date().toISOString()
+            } 
+          }
+        );
+        
+        res.send(result);
+      });
+
+
+
 
 
     await client.db("admin").command({ ping: 1 });
