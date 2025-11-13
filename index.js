@@ -29,30 +29,8 @@ async function run() {
     const carsCollection =db.collection('cars')
     const bookingsCollection = db.collection('bookings');
     const testimonialsCollection = db.collection('testimonials');
+    const bannersCollection = db.collection('banners');
 
-    const initialTestimonials = [
-  {
-    customerName: "Ahmed Rahman",
-    feedback: "Amazing service! The booking process was smooth and the car was in excellent condition. Highly recommended!",
-    rating: 5,
-    imageUrl: "https://i.pravatar.cc/150?img=12",
-    location: "Dhaka"
-  },
-  {
-    customerName: "Fatima Sultana",
-    feedback: "Best car rental experience ever! The support team was very helpful and responsive. Will definitely use again.",
-    rating: 5,
-    imageUrl: "https://i.pravatar.cc/150?img=45",
-    location: "Chittagong"
-  },
-  {
-    customerName: "Karim Hossain",
-    feedback: "Great variety of cars to choose from. The prices are competitive and the service is top-notch.",
-    rating: 4,
-    imageUrl: "https://i.pravatar.cc/150?img=33",
-    location: "Sylhet"
-  }
-];
 
 //all car
     app.get('/cars',async(req,res)=>{
@@ -60,7 +38,6 @@ async function run() {
         // console.log(result)
         res.send(result)
     });
-//feature car
     app.get('/cars/featured', async (req, res) => {
         const result = await carsCollection
           .find()
@@ -70,7 +47,6 @@ async function run() {
         res.send(result);
     });
 
-    // get car by providerEmail
     app.get('/cars/provider/:email', async (req, res) => {
         const email = req.params.email;
         const query = { providerEmail: email };
@@ -78,7 +54,6 @@ async function run() {
         res.send(result);
       });
 
-//single car by id
     app.get('/cars/:id', async (req, res) => {
     const id = req.params.id;
     const query = { _id: new ObjectId(id) };
@@ -86,7 +61,6 @@ async function run() {
     res.send(result);
     });
 
-    // Add new car
 app.post('/cars', async (req, res) => {
     const newCar = req.body;
     newCar.status = 'available';
@@ -97,7 +71,6 @@ app.post('/cars', async (req, res) => {
     res.send(result);
 });
 
- // Update car
     app.put('/cars/:id', async (req, res) => {
         const id = req.params.id;
         const updatedCar = req.body;
@@ -112,7 +85,6 @@ app.post('/cars', async (req, res) => {
         res.send(result);
       });
       
-// Delete car
     app.delete('/cars/:id', async (req, res) => {
         const id = req.params.id;
         const query = { _id: new ObjectId(id) };
@@ -124,7 +96,6 @@ app.post('/cars', async (req, res) => {
 
       //booking part
 
-    // Get all bookings by user email
     app.get('/bookings/:email', async (req, res) => {
         const email = req.params.email;
         const query = { userEmail: email };
@@ -136,7 +107,6 @@ app.post('/cars', async (req, res) => {
         const booking = req.body;
         const car = await carsCollection.findOne({ _id: new ObjectId(booking.carId) })
 
-        // Add booking
         booking.bookingDate = new Date().toISOString();
         const bookingResult = await bookingsCollection.insertOne(booking);
         await carsCollection.updateOne(
@@ -168,19 +138,12 @@ app.post('/cars', async (req, res) => {
 
 
 
-// testimonial
-const existingTestimonials = await testimonialsCollection.find().toArray();
-if (existingTestimonials.length === 0) {
-  const insertResult = await testimonialsCollection.insertMany(initialTestimonials);
-  console.log('Initial testimonials inserted:', insertResult.insertedCount);
-}
 
 app.get('/testimonials', async (req, res) => {
   const result = await testimonialsCollection.find().sort({ rating: -1 }).toArray();
   res.send(result);
 });
 
-// Add new testimonial
 app.post('/testimonials', async (req, res) => {
   const newTestimonial = req.body;
   newTestimonial.createdAt = new Date().toISOString();
@@ -189,12 +152,29 @@ app.post('/testimonials', async (req, res) => {
   res.send(result);
 });
 
-// Delete testimonial by id
 app.delete('/testimonials/:id', async (req, res) => {
   const id = req.params.id;
     const result = await testimonialsCollection.deleteOne({ _id: new ObjectId(id) });
     res.send({ success: true, deletedCount: result.deletedCount });
-  } )
+  } );
+
+  //banner
+app.get('/banners', async (req, res) => {
+  const result = await bannersCollection.find().toArray();
+  res.send(result);
+});
+
+app.post('/banners', async (req, res) => {
+  const newBanner = req.body;
+  const result = await bannersCollection.insertOne(newBanner);
+  res.send(result);
+});
+
+app.delete('/banners/:id', async (req, res) => {
+  const id = req.params.id;
+  const result = await bannersCollection.deleteOne({ _id: new ObjectId(id) });
+  res.send(result);
+});
 
 
 
