@@ -2,9 +2,8 @@ const express = require('express')
 const cors = require('cors')
 require('dotenv').config()
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
-const app = express()
+const app = express();
 const port = process.env.PORT || 3000;
-console.log(process.env)
 
 app.use(cors());
 app.use(express.json())
@@ -35,13 +34,12 @@ async function run() {
 //all car
     app.get('/cars',async(req,res)=>{
         const result = await carsCollection.find().toArray()
-        // console.log(result)
         res.send(result)
     });
     app.get('/cars/featured', async (req, res) => {
         const result = await carsCollection
           .find({status:'available'})
-          .sort({ updatedAt: -1 })
+          .sort({ createdAt: -1 })
           .limit(6)
           .toArray();
         res.send(result);
@@ -92,7 +90,28 @@ app.post('/cars', async (req, res) => {
         res.send(result);
       });
 
-    
+app.get('/cars/search', async (req, res) => {
+  try {
+    const { q, category, location } = req.query;
+    let query = {};
+      if (q) {
+      query.$or = [
+        { carName: { $regex: q, $options: 'i' } },
+        { description: { $regex: q, $options: 'i' } }
+      ];
+    }
+    if (category) {
+      query.category = category;
+    }
+    if (location) {
+      query.location = { $regex: location, $options: 'i' };
+    }
+    const result = await carsCollection.find(query).toArray();
+    res.send(result);
+  } catch (error) {
+    res.status(500).send({ error: 'Search failed' });
+  }
+});
 
       //booking part
 
@@ -106,6 +125,23 @@ app.post('/cars', async (req, res) => {
       app.post('/bookings', async (req, res) => {
         const booking = req.body;
         const car = await carsCollection.findOne({ _id: new ObjectId(booking.carId) })
+          if (!car) {
+            return res.status(404).send({ error: 'Car not found' });
+          }
+          if (car.providerEmail === booking.userEmail) {
+            return res.status(403).send({ error: 'You cannot book your own car' });
+          }
+          if (car.status === 'booked') {
+          return res.status(400).send({ error: 'This car is already booked' });
+          }
+          const existingBooking = await bookingsCollection.findOne({
+            carId: booking.carId,
+            userEmail: booking.userEmail
+          });
+  
+          if (existingBooking) {
+        return res.status(400).send({ error: 'You have already booked this car' });
+        }
 
         booking.bookingDate = new Date().toISOString();
         const bookingResult = await bookingsCollection.insertOne(booking);
@@ -135,9 +171,6 @@ app.post('/cars', async (req, res) => {
         
         res.send(result);
       });
-
-
-
 
 app.get('/testimonials', async (req, res) => {
   const result = await testimonialsCollection.find().sort({ rating: -1 }).toArray();
