@@ -30,7 +30,7 @@ async function run() {
     const bookingsCollection = db.collection('bookings');
     const testimonialsCollection = db.collection('testimonials');
     const bannersCollection = db.collection('banners');
-
+    const benefitsCollection = db.collection('benefits');
 
 //all car
     app.get('/cars',async(req,res)=>{
@@ -40,7 +40,7 @@ async function run() {
     });
     app.get('/cars/featured', async (req, res) => {
         const result = await carsCollection
-          .find()
+          .find({status:'available'})
           .sort({ updatedAt: -1 })
           .limit(6)
           .toArray();
@@ -175,6 +175,17 @@ app.delete('/banners/:id', async (req, res) => {
   const result = await bannersCollection.deleteOne({ _id: new ObjectId(id) });
   res.send(result);
 });
+
+// Get all benefits
+app.get('/benefits', async (req, res) => {
+    const result = await benefitsCollection.find().toArray();
+    res.send(result);
+  });
+app.post('/benefits', async (req, res) => {
+    const newBenefit = req.body;
+    const result = await benefitsCollection.insertOne(newBenefit);
+    res.send(result);
+  });
 
 
 
