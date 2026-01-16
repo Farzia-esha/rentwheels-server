@@ -19,16 +19,123 @@ const client = new MongoClient(uri, {
   }
 });
 
+
+
 async function run() {
   try {
-    await client.connect();
-
     const db =client.db('rentwheels-db')
     const carsCollection =db.collection('cars')
     const bookingsCollection = db.collection('bookings');
     const testimonialsCollection = db.collection('testimonials');
     const bannersCollection = db.collection('banners');
     const benefitsCollection = db.collection('benefits');
+    const usersCollection = db.collection('users');
+
+
+    // Register user
+// app.post('/users', async (req, res) => {
+//       try {
+//         const { name, email, photoURL } = req.body;
+//         if (!name || !email) return res.status(400).send({ error: 'Name and Email required' });
+
+//         const existingUser = await usersCollection.findOne({ email });
+//         if (existingUser) return res.send({ message: 'User already exists' });
+
+//         const user = { name, email, photoURL, role: 'user', createdAt: new Date().toISOString() };
+//         const result = await usersCollection.insertOne(user);
+//         res.send(result);
+//       } catch (err) {
+//         console.error(err);
+//         res.status(500).send({ error: 'Failed to register user' });
+//       }
+//     });
+
+app.post('/users', async (req, res) => {
+  const { name, email, photoURL, role = 'user' } = req.body;
+
+  const existingUser = await usersCollection.findOne({ email });
+  if (existingUser) {
+    return res.send(existingUser); // 🔥 important
+  }
+
+  const user = {
+    name,
+    email,
+    photoURL,
+    role,
+    createdAt: new Date()
+  };
+
+  const result = await usersCollection.insertOne(user);
+  res.send(user);
+});
+
+
+app.get('/users', async (req, res) => {
+  const result = await usersCollection.find().toArray();
+  res.send(result);
+});
+
+app.get('/users/:email', async (req, res) => {
+  const result = await usersCollection.find().toArray();
+  res.send(result);
+});
+
+
+
+
+// Delete a user by ID
+app.delete('/users/:id', async (req, res) => {
+  const id = req.params.id;
+
+  try {
+    const result = await usersCollection.deleteOne({ _id: new ObjectId(id) });
+
+    if (result.deletedCount === 0) {
+      return res.status(404).send({ error: "User not found" });
+    }
+
+    res.send({ success: true, deletedCount: result.deletedCount });
+  } catch (err) {
+    console.error(err);
+    res.status(500).send({ error: "Failed to delete user" });
+  }
+});
+
+
+app.patch('/users/admin/:id', async (req, res) => {
+  const id = req.params.id;
+
+  const filter = { _id: new ObjectId(id) };
+  const updateDoc = {
+    $set: { role: 'admin' }
+  };
+
+  const result = await usersCollection.updateOne(filter, updateDoc);
+  res.send(result);
+});
+
+// // get profile
+app.get('/profile/:email', async (req, res) => {
+  const email = req.params.email;
+  const user = await usersCollection.findOne({ email });
+  if(!user) return res.status(404).send({ error: 'User not found' });
+  res.send(user);
+});
+
+// update profile
+app.put('/profile/:email', async (req, res) => {
+  const email = req.params.email;
+  const updatedData = req.body; // name, photoURL etc.
+  const result = await usersCollection.updateOne(
+    { email },
+    { $set: updatedData }
+  );
+  res.send(result);
+});
+
+
+
 
 //all car
     app.get('/cars',async(req,res)=>{
@@ -39,7 +146,7 @@ async function run() {
         const result = await carsCollection
           .find({status:'available'})
           .sort({ createdAt: -1 })
-          .limit(6)
+          .limit(8)
           .toArray();
         res.send(result);
     });
@@ -219,12 +326,35 @@ app.post('/benefits', async (req, res) => {
     res.send(result);
   });
 
+  // Dashboard statistics
+app.get('/dashboard-stats', async (req, res) => {
+  try {
+    const totalCars = await carsCollection.countDocuments();
+    const totalBookings = await bookingsCollection.countDocuments();
+    const totalTestimonials = await testimonialsCollection.countDocuments();
+
+    const recentBookings = await bookingsCollection
+      .find()
+      .sort({ bookingDate: -1 })
+      .limit(5)
+      .toArray();
+
+    res.send({
+      totalCars,
+      totalBookings,
+      totalTestimonials,
+      recentBookings
+    });
+  } catch (error) {
+    res.status(500).send({ error: 'Failed to load dashboard stats' });
+  }
+});
 
 
-    // await client.db("admin").command({ ping: 1 });
+
+
     console.log("Pinged your deployment. You successfully connected to MongoDB!");
   } finally {
-    // await client.close();
   }
 }
 run().catch(console.dir);

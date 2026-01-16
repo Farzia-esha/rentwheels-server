@@ -10,9 +10,7 @@
     {
       "src": "/(.*)",
       "dest": "index.js",
-      "header":{
-        "Access-Control-Allow-Methods":"GET,POST,PUT,PATCH,DELETE,OPTIONS"
-      }
+      "methods": ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"]
     }
   ]
 }
